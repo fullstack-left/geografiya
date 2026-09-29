@@ -29,10 +29,14 @@ export type IconName =
   | 'updown'
   | 'chain'
   | 'mountain'
-  | 'calendar';
+  | 'calendar'
+  | 'check'
+  | 'reset';
 
 const paths: Record<IconName, React.ReactNode> = {
   'arrow-right': <path d="M5 12h14M13 6l6 6-6 6" />,
+  check: <path d="M4 12.5l5 5L20 6.5" />,
+  reset: <path d="M4 4v6h6M4.6 15a8 8 0 1 0 1.9-8.3L4 10" />,
   'sound-on': (
     <>
       <path d="M4 9v6h4l5 4V5L8 9H4z" />

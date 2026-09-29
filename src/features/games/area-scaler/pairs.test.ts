@@ -9,7 +9,7 @@ import type { Difficulty } from './scoring';
 import { initialState, reducer } from './state';
 
 const { countries: all } = JSON.parse(
-  readFileSync(join(__dirname, '../../../../public/data/countries.v1.json'), 'utf8'),
+  readFileSync(join(__dirname, '../../../../public/data/countries.v2.json'), 'utf8'),
 ) as CountriesFile;
 const countries = all.filter((c) => isIncluded(c, { includeTerritories: false, includePartial: true }));
 const byId = new Map(countries.map((c) => [c.id, c]));

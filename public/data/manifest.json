@@ -1,9 +1,10 @@
 {
-  "version": 1,
-  "generatedAt": "2026-09-29T10:05:32.327Z",
+  "version": 2,
+  "generatedAt": "2026-09-29T11:43:57.355Z",
   "files": {
-    "countries": "countries.v1.json",
-    "world": "world-50m.v1.json"
+    "countries": "countries.v2.json",
+    "world": "world-50m.v2.json",
+    "features": "features.v2.json"
   },
   "sources": [
     {
@@ -11,35 +12,45 @@
       "name": "mledoze/countries (REST Countries dataset)",
       "url": "https://cdn.jsdelivr.net/gh/mledoze/countries@master/countries.json",
       "license": "ODbL-1.0",
-      "fetchedAt": "2026-09-29T10:05:32.327Z"
+      "fetchedAt": "2026-09-29T11:43:57.355Z"
     },
     {
       "id": "worldbank",
-      "name": "World Bank Open Data (AG.SRF.TOTL.K2, SP.POP.TOTL)",
+      "name": "World Bank Open Data (AG.SRF.TOTL.K2, SP.POP.TOTL, NY.GDP.MKTP.CD)",
       "url": "https://data.worldbank.org",
       "license": "CC BY 4.0",
-      "fetchedAt": "2026-09-29T10:05:32.327Z",
+      "fetchedAt": "2026-09-29T11:43:57.355Z",
       "upstreamUpdated": "2026-07-13"
     },
     {
       "id": "wikidata",
-      "name": "Wikidata SPARQL (uz/ru labels, area P2046)",
+      "name": "Wikidata SPARQL (uz/ru labels, area, highest points, rivers/peaks/lakes)",
       "url": "https://query.wikidata.org",
       "license": "CC0",
-      "fetchedAt": "2026-09-29T10:05:32.327Z"
+      "fetchedAt": "2026-09-29T11:43:57.355Z"
     },
     {
       "id": "natural-earth",
       "name": "Natural Earth 1:50m via world-atlas@2",
       "url": "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json",
       "license": "Public domain",
-      "fetchedAt": "2026-09-29T10:05:32.327Z"
+      "fetchedAt": "2026-09-29T11:43:57.355Z"
+    },
+    {
+      "id": "flagpedia",
+      "name": "Flags: Flagpedia / flagcdn.com (self-hosted)",
+      "url": "https://flagpedia.net",
+      "license": "Public domain",
+      "fetchedAt": "2026-09-29T11:43:57.355Z"
     }
   ],
   "stats": {
     "countries": 250,
     "withGeometry": 236,
     "withPopulation": 216,
+    "withGdp": 186,
+    "withHighestPoint": 232,
+    "features": 105,
     "areaDiscrepancies": 49
   },
   "warnings": [
@@ -80,6 +91,9 @@
     "area YEM: worldbank=527970, wikidata=455503, mledoze-countries=527968 → worldbank (confirmed by another source)",
     "borders LKA↔IND: not symmetric",
     "geometry missing for sovereign TUV",
-    "population missing for VAT"
+    "population missing for VAT",
+    "feature Q35342 Titicaca: wikidata=[489] vs reference 281 → using reference",
+    "feature Q49650 Loch Ness: wikidata=[272] vs reference 230 → using reference",
+    "feature Q134485 Lake Balkhash area: wikidata=[18200] vs reference 16400 → using reference"
   ]
 }

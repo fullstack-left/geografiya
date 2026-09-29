@@ -18,14 +18,16 @@ export interface GameMeta {
 }
 
 /** Order = order on the home page. `ready` flips as each module ships. */
+export const gamePath = (id: GameId) => `/play/${id}` as const;
+
 export const GAMES: GameMeta[] = [
   { id: 'area-scaler', ready: true, icon: 'area' },
-  { id: 'capitals', ready: false, icon: 'capital' },
-  { id: 'flags', ready: false, icon: 'flag' },
-  { id: 'map-click', ready: false, icon: 'pin' },
-  { id: 'shapes', ready: false, icon: 'shape' },
-  { id: 'higher-lower', ready: false, icon: 'updown' },
-  { id: 'borders', ready: false, icon: 'chain' },
-  { id: 'features', ready: false, icon: 'mountain' },
-  { id: 'daily', ready: false, icon: 'calendar' },
+  { id: 'capitals', ready: true, icon: 'capital' },
+  { id: 'flags', ready: true, icon: 'flag' },
+  { id: 'map-click', ready: true, icon: 'pin' },
+  { id: 'shapes', ready: true, icon: 'shape' },
+  { id: 'higher-lower', ready: true, icon: 'updown' },
+  { id: 'borders', ready: true, icon: 'chain' },
+  { id: 'features', ready: true, icon: 'mountain' },
+  { id: 'daily', ready: true, icon: 'calendar' },
 ];

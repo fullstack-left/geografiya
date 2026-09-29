@@ -1,7 +1,7 @@
 import { animate } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { forwardRef, useEffect, useState, type ReactNode } from 'react';
-import { niceScaleBar } from '../geometry';
+import { niceScaleBar } from '@/lib/geo/geometry';
 import { formatNumber } from '@/lib/format';
 import { useSettings } from '@/stores/settings';
 

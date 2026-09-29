@@ -2,14 +2,14 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { AnimatePresence, animate, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { Country } from '@/data/types';
-import type { WorldTopology } from '@/data/queries';
+import { flagUrl, type WorldTopology } from '@/data/queries';
 import { Button, Card } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { play } from '@/lib/sound';
 import { mulberry32, randomSeed } from '@/lib/random';
 import { formatNumber, formatRatio } from '@/lib/format';
 import { useSettings } from '@/stores/settings';
-import { fitScale, getCountryFeature, linearScaleFor, mainlandFeature, areaKm2, projectShape, trueAreaRatio } from './geometry';
+import { fitScale, getCountryFeature, linearScaleFor, mainlandFeature, areaKm2, projectShape, trueAreaRatio } from '@/lib/geo/geometry';
 import { pickPairs, type Pair } from './pairs';
 import { errorPercent, grade, summarize, type Difficulty, type RoundResult } from './scoring';
 import { ROUNDS_PER_GAME, initialState, reducer } from './state';
@@ -386,7 +386,7 @@ function ResultCard({
         ].map(({ c, km, cls }) => (
           <div key={c.id} className={`rounded-2xl border-l-4 bg-bg p-3 ${cls}`}>
             <p className="font-medium">
-              <img src={c.flagSvg} alt="" width={20} height={14} loading="lazy" className="mr-1.5 inline-block h-3.5 w-5 rounded-sm object-cover align-[-1px] ring-1 ring-line" />
+              <img src={flagUrl(c)} alt="" width={20} height={14} loading="lazy" className="mr-1.5 inline-block h-3.5 w-5 rounded-sm object-cover align-[-1px] ring-1 ring-line" />
               {c.name[locale]}
             </p>
             <p className="mt-1 text-xs text-ink-muted">

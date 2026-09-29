@@ -18,9 +18,9 @@ import {
   trueAreaRatio,
 } from './geometry';
 
-const DATA = join(__dirname, '../../../../public/data');
-const world = JSON.parse(readFileSync(join(DATA, 'world-50m.v1.json'), 'utf8')) as WorldTopology;
-const { countries } = JSON.parse(readFileSync(join(DATA, 'countries.v1.json'), 'utf8')) as CountriesFile;
+const DATA = join(__dirname, '../../../public/data');
+const world = JSON.parse(readFileSync(join(DATA, 'world-50m.v2.json'), 'utf8')) as WorldTopology;
+const { countries } = JSON.parse(readFileSync(join(DATA, 'countries.v2.json'), 'utf8')) as CountriesFile;
 const byId = new Map(countries.map((c) => [c.id, c]));
 
 const feat = (id: string) => {

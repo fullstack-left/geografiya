@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type { Topology, GeometryCollection } from 'topojson-specification';
-import type { CountriesFile, Country, DataManifest } from './types';
+import type { CountriesFile, Country, DataManifest, FeaturesFile } from './types';
 import { DATA_VERSION } from './types';
 import { useSettings } from '@/stores/settings';
 
@@ -32,6 +32,17 @@ export const useWorld = () =>
     queryFn: () => getJson<WorldTopology>(`world-50m.v${DATA_VERSION}.json`),
     ...staticOpts,
   });
+
+export const useFeatures = () =>
+  useQuery({
+    queryKey: ['features', DATA_VERSION],
+    queryFn: () => getJson<FeaturesFile>(`features.v${DATA_VERSION}.json`),
+    select: (f) => f.features,
+    ...staticOpts,
+  });
+
+/** Absolute URL of a self-hosted flag. */
+export const flagUrl = (c: Pick<Country, 'flagSvg'>) => `${import.meta.env.BASE_URL}${c.flagSvg}`;
 
 export interface InclusionFilter {
   includeTerritories: boolean;

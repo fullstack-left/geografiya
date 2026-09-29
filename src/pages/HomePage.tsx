@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { GAMES } from '@/features/games/registry';
+import { GAMES, gamePath } from '@/features/games/registry';
 import { Card, Seo } from '@/components/ui';
 import { Icon } from '@/components/icons';
 
@@ -50,18 +50,20 @@ export function HomePage() {
             </Link>
           )}
           {rest.map((g) => (
-            <Card key={g.id} className="relative p-6 opacity-90">
-              <div className="flex items-start justify-between">
-                <Icon name={g.icon} className="text-3xl text-accent" />
-                {!g.ready && (
-                  <span className="rounded-full border border-line px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-ink-muted">
-                    {t('common.soon')}
-                  </span>
-                )}
-              </div>
-              <h3 className="mt-4 font-display text-xl">{t(`games.${g.id}.name`)}</h3>
-              <p className="mt-1 text-sm text-ink-muted">{t(`games.${g.id}.desc`)}</p>
-            </Card>
+            <Link key={g.id} to={gamePath(g.id)} className="group">
+              <Card className="relative h-full p-6 transition group-hover:-translate-y-0.5 group-hover:border-primary">
+                <div className="flex items-start justify-between">
+                  <Icon name={g.icon} className="text-3xl text-accent" />
+                  {g.id === 'daily' && (
+                    <span className="rounded-full bg-accent px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-primary-ink">
+                      {t('home.today')}
+                    </span>
+                  )}
+                </div>
+                <h3 className="mt-4 font-display text-xl">{t(`games.${g.id}.name`)}</h3>
+                <p className="mt-1 text-sm text-ink-muted">{t(`games.${g.id}.desc`)}</p>
+              </Card>
+            </Link>
           ))}
         </div>
       </section>

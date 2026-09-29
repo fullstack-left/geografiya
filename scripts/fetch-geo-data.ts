@@ -23,6 +23,9 @@
  * agree is used instead, otherwise the median. Every decision is logged in
  * manifest.json → warnings.
  *  - world-atlas (Natural Earth 1:50m) – TopoJSON country polygons.
+ *  - World Bank NY.GDP.MKTP.CD – GDP (current US$).
+ *  - Wikidata P610/P2044 – highest point per country; curated rivers, peaks, lakes.
+ *  - flagcdn.com (Flagpedia, public domain) – flag SVGs, self-hosted in public/flags/.
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
@@ -32,8 +35,11 @@ import { geoArea } from 'd3-geo';
 import { feature } from 'topojson-client';
 import type { Topology, GeometryCollection } from 'topojson-specification';
 import type { Feature, Geometry } from 'geojson';
+import { CURATED_FEATURES } from './curated-features';
 import {
   DATA_VERSION,
+  type FeaturesFile,
+  type GeoFeature,
   type AreaRecord,
   type CountriesFile,
   type Country,
@@ -58,8 +64,22 @@ const URLS = {
   world: 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json',
   wbArea: 'https://api.worldbank.org/v2/country/all/indicator/AG.SRF.TOTL.K2?format=json&mrv=1&per_page=400',
   wbPop: 'https://api.worldbank.org/v2/country/all/indicator/SP.POP.TOTL?format=json&mrv=1&per_page=400',
+  wbGdp: 'https://api.worldbank.org/v2/country/all/indicator/NY.GDP.MKTP.CD?format=json&mrv=1&per_page=400',
   wikidata: 'https://query.wikidata.org/sparql',
+  flag: (cca2: string) => `https://flagcdn.com/${cca2}.svg`,
 };
+const FEATURE_TOLERANCE_PCT = 5;
+
+/** Highest points missing from Wikidata P610 (value source: 'reference'). */
+const HIGHEST_POINT_OVERRIDES: Record<string, { e: number; en: string; uz: string; ru: string }> = {
+  USA: { e: 6190, en: 'Denali', uz: 'Denali', ru: 'Денали' },
+  GMB: { e: 53, en: 'Red Rock', uz: 'Red Rok', ru: 'Ред-Рок' },
+};
+
+const sparqlUrl = (q: string) => `${URLS.wikidata}?format=json&query=${encodeURIComponent(q)}`;
+const SPARQL_INIT = { headers: { Accept: 'application/sparql-results+json' } };
+type Binding = Record<string, { value: string } | undefined>;
+type SparqlResult = { results: { bindings: Binding[] } };
 
 /** Codes where sources disagree on identifiers. mledoze uses UNK for Kosovo. */
 const WB_TO_APP: Record<string, string> = { XKX: 'UNK' };
@@ -165,11 +185,12 @@ async function main() {
   const fetchedAt = new Date().toISOString();
   console.log('GeoMaster data pipeline');
 
-  const [raw, world, wbArea, wbPop] = await Promise.all([
+  const [raw, world, wbArea, wbPop, wbGdp] = await Promise.all([
     fetchCached<MledozeCountry[]>('mledoze-countries', URLS.countries),
     fetchCached<Topology<{ countries: GeometryCollection<{ name: string }> }>>('world-atlas-50m', URLS.world),
     fetchCached<WbResponse>('wb-area', URLS.wbArea),
     fetchCached<WbResponse>('wb-pop', URLS.wbPop),
+    fetchCached<WbResponse>('wb-gdp', URLS.wbGdp),
   ]);
 
   const sparql = `
@@ -227,9 +248,34 @@ async function main() {
   };
   const areaWB = toMap(wbArea[1]);
   const popWB = toMap(wbPop[1]);
+  const gdpWB = toMap(wbGdp[1]);
+
+  // Highest point per country (Wikidata P610 → elevation P2044)
+  const hpRaw = await fetchCached<SparqlResult>(
+    'wikidata-highest-points',
+    sparqlUrl(`
+      SELECT ?iso ?hp ?e ?en ?uz ?ru WHERE {
+        ?c wdt:P298 ?iso . FILTER NOT EXISTS { ?c wdt:P576 ?d }
+        ?c wdt:P610 ?hp . ?hp wdt:P2044 ?e .
+        OPTIONAL { ?hp rdfs:label ?en FILTER(LANG(?en) = "en") }
+        OPTIONAL { ?hp rdfs:label ?uz FILTER(LANG(?uz) = "uz") }
+        OPTIONAL { ?hp rdfs:label ?ru FILTER(LANG(?ru) = "ru") }
+      }`),
+    SPARQL_INIT,
+  );
+  const highest = new Map<string, { e: number; en: string; uz?: string; ru?: string }>();
+  for (const b of hpRaw.results.bindings) {
+    const iso = b.iso!.value === 'XKX' ? 'UNK' : b.iso!.value;
+    const e = Number(b.e!.value);
+    const cur = highest.get(iso);
+    // several statements (claims by neighbours, old surveys) → keep the highest
+    if (!b.en || (cur && cur.e >= e)) continue;
+    highest.set(iso, { e, en: b.en.value, uz: b.uz?.value, ru: b.ru?.value });
+  }
 
   // Wikidata → per iso: names + capital labels (keyed by English label)
   type WdEntry = { uz?: string; ru?: string; caps: Map<string, { uz?: string; ru?: string }> };
+  // (caps is keyed by the English label; see capital matching below)
   const wdNames = new Map<string, WdEntry>();
   for (const b of wd.results.bindings) {
     const iso = b.iso.value;
@@ -300,10 +346,15 @@ async function main() {
         geometryKm2: geomArea.get(id) ?? null,
       };
 
+      const wdCaps = [...(wdEntry?.caps.entries() ?? [])];
       const capitals = (c.capital ?? []).map((en) => {
-        const t = wdEntry?.caps.get(en);
+        // exact English label match, else the single Wikidata capital
+        // (e.g. "Washington D.C." vs "Washington, D.C.")
+        const t = wdEntry?.caps.get(en) ?? (c.capital.length === 1 && wdCaps.length === 1 ? wdCaps[0]![1] : undefined);
         return loc(en, t?.uz, t?.ru);
       });
+      const override = HIGHEST_POINT_OVERRIDES[id];
+      const hp = highest.get(id) ?? override;
 
       return {
         id,
@@ -318,10 +369,14 @@ async function main() {
         ...(PARTIAL[id] ? { statusNote: PARTIAL[id] } : {}),
         area,
         population: popWB.get(id) ?? null,
+        gdp: gdpWB.get(id) ?? null,
+        highestPoint: hp
+          ? { name: loc(hp.en, hp.uz, hp.ru), elevation: { value: Math.round(hp.e), source: highest.has(id) ? 'wikidata' : 'reference' } }
+          : null,
         borders: c.borders,
         landlocked: c.landlocked,
         latlng: c.latlng,
-        flagSvg: `https://flagcdn.com/${c.cca2.toLowerCase()}.svg`,
+        flagSvg: `flags/${c.cca2.toLowerCase()}.svg`,
         flagEmoji: c.flag,
         hasGeometry: geomArea.has(id),
       };
@@ -346,15 +401,100 @@ async function main() {
     ['UZB', 440_000, 460_000],
     ['VAT', 0.3, 1],
   ];
+  for (const [id, elev] of [['NPL', 8849], ['UZB', 4643], ['FRA', 4806]] as const) {
+    const v = byId.get(id)?.highestPoint?.elevation.value ?? -1;
+    if (Math.abs(v - elev) > 5) throw new Error(`Sanity check failed: highest point ${id}=${v}, expected ≈${elev}`);
+  }
   for (const [id, lo, hi] of mustBe) {
     const v = byId.get(id)?.area.value ?? -1;
     if (v < lo || v > hi) throw new Error(`Sanity check failed: area ${id}=${v} not in [${lo}, ${hi}]`);
   }
 
+  // ---------------------------------------------------------------- features
+  const qids = CURATED_FEATURES.map((f) => `wd:${f.qid}`).join(' ');
+  const featRaw = await fetchCached<SparqlResult>(
+    'wikidata-features',
+    sparqlUrl(`
+      SELECT ?x ?en ?uz ?ru ?len ?elev ?depth ?area ?iso WHERE {
+        VALUES ?x { ${qids} }
+        ?x rdfs:label ?en FILTER(LANG(?en) = "en")
+        OPTIONAL { ?x rdfs:label ?uz FILTER(LANG(?uz) = "uz") }
+        OPTIONAL { ?x rdfs:label ?ru FILTER(LANG(?ru) = "ru") }
+        OPTIONAL { ?x wdt:P2043 ?len }
+        OPTIONAL { ?x wdt:P2044 ?elev }
+        OPTIONAL { ?x wdt:P4511 ?depth }
+        OPTIONAL { ?x wdt:P2046 ?area }
+        OPTIONAL { ?x wdt:P17/wdt:P298 ?iso }
+      }`),
+    SPARQL_INIT,
+  );
+  type FeatAgg = { en: string; uz?: string; ru?: string; value: Set<number>; area: Set<number>; iso: Set<string> };
+  const agg = new Map<string, FeatAgg>();
+  for (const b of featRaw.results.bindings) {
+    const qid = b.x!.value.split('/').pop()!;
+    const a = agg.get(qid) ?? { en: b.en!.value, value: new Set(), area: new Set(), iso: new Set() };
+    a.uz ??= b.uz?.value;
+    a.ru ??= b.ru?.value;
+    for (const k of ['len', 'elev', 'depth'] as const) if (b[k]) a.value.add(Number(b[k]!.value));
+    if (b.area) a.area.add(Number(b.area.value));
+    if (b.iso) a.iso.add(b.iso.value);
+    agg.set(qid, a);
+  }
+  const pickClosest = (vals: Set<number>, ref: number, what: string): SourcedValue<number> => {
+    const best = [...vals].sort((x, y) => Math.abs(x - ref) - Math.abs(y - ref))[0];
+    if (best !== undefined && relDiffPct(best, ref) <= FEATURE_TOLERANCE_PCT) {
+      return { value: Math.round(best), source: 'wikidata' };
+    }
+    warnings.push(`feature ${what}: wikidata=[${[...vals].map(Math.round).join(', ')}] vs reference ${ref} → using reference`);
+    return { value: ref, source: 'reference' };
+  };
+  const features: GeoFeature[] = CURATED_FEATURES.map((f) => {
+    const a = agg.get(f.qid);
+    if (!a) throw new Error(`Wikidata item ${f.qid} not found`);
+    const what = `${f.qid} ${a.en}`;
+    // Only P2043 for rivers, P2044 for peaks, P4511 for lakes — re-filter by kind.
+    const kindVals = new Set(
+      featRaw.results.bindings
+        .filter((b) => b.x!.value.endsWith(`/${f.qid}`))
+        .map((b) => b[f.kind === 'river' ? 'len' : f.kind === 'mountain' ? 'elev' : 'depth']?.value)
+        .filter((v): v is string => v !== undefined)
+        .map(Number),
+    );
+    return {
+      id: f.qid,
+      kind: f.kind,
+      name: loc(a.en, a.uz ?? f.uz, a.ru),
+      value: pickClosest(kindVals, f.ref, what),
+      ...(f.refArea ? { area: pickClosest(a.area, f.refArea, `${what} area`) } : {}),
+      countries: [...a.iso].map((i) => WB_TO_APP[i] ?? i).sort(),
+    };
+  });
+
+  // ---------------------------------------------------------------- flags
+  const FLAGS = join(ROOT, 'public', 'flags');
+  await mkdir(FLAGS, { recursive: true });
+  let downloaded = 0;
+  for (const c of countries) {
+    const code = c.cca2.toLowerCase();
+    const file = join(FLAGS, `${code}.svg`);
+    if (!FRESH && existsSync(file)) continue;
+    const res = await fetch(URLS.flag(code));
+    if (!res.ok) {
+      warnings.push(`flag ${c.id}: HTTP ${res.status}`);
+      continue;
+    }
+    await writeFile(file, await res.text());
+    downloaded++;
+  }
+  console.log(`  ↓ flags: ${downloaded} downloaded`);
+
   // ---------------------------------------------------------------- write
   await mkdir(OUT, { recursive: true });
   const countriesName = `countries.v${DATA_VERSION}.json`;
   const worldName = `world-50m.v${DATA_VERSION}.json`;
+  const featuresName = `features.v${DATA_VERSION}.json`;
+  const featuresFile: FeaturesFile = { version: DATA_VERSION, generatedAt: fetchedAt, features };
+  await writeFile(join(OUT, featuresName), JSON.stringify(featuresFile));
   const generatedAt = fetchedAt;
 
   const countriesFile: CountriesFile = { version: DATA_VERSION, generatedAt, countries };
@@ -363,19 +503,23 @@ async function main() {
 
   const sources: SourceInfo[] = [
     { id: 'mledoze-countries', name: 'mledoze/countries (REST Countries dataset)', url: URLS.countries, license: 'ODbL-1.0', fetchedAt },
-    { id: 'worldbank', name: 'World Bank Open Data (AG.SRF.TOTL.K2, SP.POP.TOTL)', url: 'https://data.worldbank.org', license: 'CC BY 4.0', fetchedAt, upstreamUpdated: wbArea[0].lastupdated },
-    { id: 'wikidata', name: 'Wikidata SPARQL (uz/ru labels, area P2046)', url: 'https://query.wikidata.org', license: 'CC0', fetchedAt },
+    { id: 'worldbank', name: 'World Bank Open Data (AG.SRF.TOTL.K2, SP.POP.TOTL, NY.GDP.MKTP.CD)', url: 'https://data.worldbank.org', license: 'CC BY 4.0', fetchedAt, upstreamUpdated: wbArea[0].lastupdated },
+    { id: 'wikidata', name: 'Wikidata SPARQL (uz/ru labels, area, highest points, rivers/peaks/lakes)', url: 'https://query.wikidata.org', license: 'CC0', fetchedAt },
     { id: 'natural-earth', name: 'Natural Earth 1:50m via world-atlas@2', url: URLS.world, license: 'Public domain', fetchedAt },
+    { id: 'flagpedia', name: 'Flags: Flagpedia / flagcdn.com (self-hosted)', url: 'https://flagpedia.net', license: 'Public domain', fetchedAt },
   ];
   const manifest: DataManifest = {
     version: DATA_VERSION,
     generatedAt,
-    files: { countries: countriesName, world: worldName },
+    files: { countries: countriesName, world: worldName, features: featuresName },
     sources,
     stats: {
       countries: countries.length,
       withGeometry: countries.filter((c) => c.hasGeometry).length,
       withPopulation: countries.filter((c) => c.population).length,
+      withGdp: countries.filter((c) => c.gdp).length,
+      withHighestPoint: countries.filter((c) => c.highestPoint).length,
+      features: features.length,
       areaDiscrepancies: countries.filter((c) => c.area.discrepancyPct > DISCREPANCY_WARN_PCT).length,
     },
     warnings,
