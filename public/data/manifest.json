@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "generatedAt": "2026-09-29T10:05:32.327Z",
+  "files": {
+    "countries": "countries.v1.json",
+    "world": "world-50m.v1.json"
+  },
+  "sources": [
+    {
+      "id": "mledoze-countries",
+      "name": "mledoze/countries (REST Countries dataset)",
+      "url": "https://cdn.jsdelivr.net/gh/mledoze/countries@master/countries.json",
+      "license": "ODbL-1.0",
+      "fetchedAt": "2026-09-29T10:05:32.327Z"
+    },
+    {
+      "id": "worldbank",
+      "name": "World Bank Open Data (AG.SRF.TOTL.K2, SP.POP.TOTL)",
+      "url": "https://data.worldbank.org",
+      "license": "CC BY 4.0",
+      "fetchedAt": "2026-09-29T10:05:32.327Z",
+      "upstreamUpdated": "2026-07-13"
+    },
+    {
+      "id": "wikidata",
+      "name": "Wikidata SPARQL (uz/ru labels, area P2046)",
+      "url": "https://query.wikidata.org",
+      "license": "CC0",
+      "fetchedAt": "2026-09-29T10:05:32.327Z"
+    },
+    {
+      "id": "natural-earth",
+      "name": "Natural Earth 1:50m via world-atlas@2",
+      "url": "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json",
+      "license": "Public domain",
+      "fetchedAt": "2026-09-29T10:05:32.327Z"
+    }
+  ],
+  "stats": {
+    "countries": 250,
+    "withGeometry": 236,
+    "withPopulation": 216,
+    "areaDiscrepancies": 49
+  },
+  "warnings": [
+    "world-atlas: duplicate id for \"Ashmore and Cartier Is.\" → detached from AUS",
+    "area ARE: worldbank=98647.9, wikidata=83600, mledoze-countries=83600 → wikidata (confirmed by another source)",
+    "area BHR: worldbank=800, wikidata=786.5, mledoze-countries=765 → worldbank (confirmed by another source)",
+    "area BRB: worldbank=430, wikidata=439, mledoze-countries=430 → worldbank (confirmed by another source)",
+    "area CAN: worldbank=15634410, wikidata=9984670, mledoze-countries=9984670 → wikidata (confirmed by another source)",
+    "area COM: worldbank=1861, wikidata=2034, mledoze-countries=1862 → worldbank (confirmed by another source)",
+    "area DOM: worldbank=146839.46, wikidata=48670.82, mledoze-countries=48671 → wikidata (confirmed by another source)",
+    "area ECU: worldbank=256370, wikidata=257204.27, mledoze-countries=276841 → worldbank (confirmed by another source)",
+    "area ERI: worldbank=121765.8, wikidata=117600, mledoze-countries=117600 → wikidata (confirmed by another source)",
+    "area ETH: worldbank=1136239.7, wikidata=1104300, mledoze-countries=1104300 → wikidata (confirmed by another source)",
+    "area FRA: worldbank=606410, wikidata=643801, mledoze-countries=551695 → worldbank (no agreement → median)",
+    "area GMB: worldbank=11300, wikidata=11300, mledoze-countries=10689 → worldbank (confirmed by another source)",
+    "area GRD: worldbank=340, wikidata=348.5, mledoze-countries=344 → worldbank (confirmed by another source)",
+    "area HRV: worldbank=88070, wikidata=56594, mledoze-countries=56594 → wikidata (confirmed by another source)",
+    "area IRN: worldbank=1745150, wikidata=1648195, mledoze-countries=1648195 → wikidata (confirmed by another source)",
+    "area ISR: worldbank=22070, wikidata=20770, mledoze-countries=20770 → wikidata (confirmed by another source)",
+    "area KNA: worldbank=260, wikidata=269.36, mledoze-countries=261 → worldbank (confirmed by another source)",
+    "area MCO: worldbank=74.9, wikidata=2.08, mledoze-countries=2.02 → wikidata (no agreement → median)",
+    "area NIC: worldbank=130370, wikidata=120340, mledoze-countries=130373 → worldbank (confirmed by another source)",
+    "area NOR: worldbank=624500, wikidata=385207, mledoze-countries=323802 → wikidata (no agreement → median)",
+    "area NRU: worldbank=20, wikidata=21, mledoze-countries=21 → wikidata (confirmed by another source)",
+    "area PAK: worldbank=796100, wikidata=881913, mledoze-countries=881912 → wikidata (confirmed by another source)",
+    "area PHL: worldbank=300000, wikidata=343448, mledoze-countries=342353 → wikidata (confirmed by another source)",
+    "area PSE: worldbank=6025, wikidata=6020, mledoze-countries=6220 → worldbank (confirmed by another source)",
+    "area SAU: worldbank=2149690, wikidata=2250000, mledoze-countries=2149690 → worldbank (confirmed by another source)",
+    "area SGP: worldbank=728, wikidata=719.1, mledoze-countries=710 → worldbank (confirmed by another source)",
+    "area SRB: worldbank=84990, wikidata=88499, mledoze-countries=88361 → wikidata (confirmed by another source)",
+    "area SSD: worldbank=646883, wikidata=644329, mledoze-countries=619745 → worldbank (confirmed by another source)",
+    "area STP: worldbank=960, wikidata=1001, mledoze-countries=964 → worldbank (confirmed by another source)",
+    "area SWE: worldbank=528660, wikidata=447425.16, mledoze-countries=450295 → wikidata (confirmed by another source)",
+    "area TUV: worldbank=30, wikidata=25.14, mledoze-countries=26 → mledoze-countries (no agreement → median)",
+    "area URY: worldbank=176220, wikidata=176215, mledoze-countries=181034 → worldbank (confirmed by another source)",
+    "area USA: worldbank=9831510, wikidata=9826675, mledoze-countries=9372610 → worldbank (confirmed by another source)",
+    "area VAT: wikidata=0.49, mledoze-countries=0.44 → mledoze-countries (no agreement → median)",
+    "area YEM: worldbank=527970, wikidata=455503, mledoze-countries=527968 → worldbank (confirmed by another source)",
+    "borders LKA↔IND: not symmetric",
+    "geometry missing for sovereign TUV",
+    "population missing for VAT"
+  ]
+}
